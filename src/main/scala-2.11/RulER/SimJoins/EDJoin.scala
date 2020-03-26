@@ -5,9 +5,13 @@ import java.util.Calendar
 import RulER.Commons.CommonFunctions
 import RulER.Commons.ED.CommonEdFunctions.{commons, getPrefixLen}
 import RulER.Commons.ED.{CommonEdFunctions, EdFilters}
-import RulER.DataStructure.{Profile, Qgram}
+import RulER.Commons.JS.CommonJsFunctions
+import RulER.DataStructure.{Profile, Qgram, Rule}
+import RulER.SimJoins.PPJoin.getCandidates
 import org.apache.log4j.LogManager
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.DoubleAccumulator
 
 object EDJoin {
@@ -87,5 +91,14 @@ object EDJoin {
     log.info("[GraphJoin] EDJOIN join time (s) " + (t2 - t1) / 1000.0)
 
     candidates
+  }
+
+  def EDJoin(df: DataFrame, r: Rule, qgramLen: Int = 7): DataFrame = {
+    val profiles = CommonFunctions.dfProfilesToRDD1(df)
+    val docs = CommonFunctions.extractField(profiles, r.attribute).map(x => (x._1, CommonEdFunctions.getQgrams(x._2, qgramLen)))
+    val tokenizedDocSort = CommonEdFunctions.getSortedQgrams(docs)
+    val compNum = SparkContext.getOrCreate().doubleAccumulator
+    val sparkSession = SparkSession.builder().getOrCreate()
+    sparkSession.createDataFrame(getCandidates(tokenizedDocSort, qgramLen, r.threshold.toInt, compNum)).toDF("id1", "id2")
   }
 }

@@ -3,6 +3,10 @@ package RulER.Commons
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import RulER.DataStructure.{KeyValue, Profile}
+import breeze.macros.expand.args
+import org.apache.spark
+import org.apache.spark.sql.types.{LongType, StructField, StructType}
+import org.dmg.pmml.True
 
 import scala.collection.mutable
 
@@ -56,6 +60,16 @@ object CommonFunctions {
     attributes
   }
 
+  def dfZipWithIndex(df: DataFrame, offset: Long = 0, colName: String = "_rowId"): DataFrame = {
+    val newSchema = StructType(StructField(colName, LongType, true) :: df.schema.fields.toList)
+    val zippedRdd = df.rdd.zipWithIndex()
+
+    val newRdd = zippedRdd.map(x => Row.fromSeq(x._2 :: x._1.toSeq.toList))
+
+    val sparkSession = SparkSession.builder().getOrCreate()
+    sparkSession.createDataFrame(newRdd, newSchema)
+  }
+
 
   def dfProfilesToRDD(df: DataFrame, startIDFrom: Long = 0, explodeInnerFields: Boolean = false, innerSeparator: String = ",", realIDField: String = ""): RDD[Profile] = {
     val columnNames = df.columns
@@ -76,10 +90,29 @@ object CommonFunctions {
     }
   }
 
+  def dfProfilesToRDD1(df: DataFrame, startIDFrom: Long = 0, explodeInnerFields: Boolean = false, innerSeparator: String = ",", realIDField: String = ""): RDD[Profile] = {
+    val columnNames = df.columns
+
+    df.rdd.map(row => rowToAttributes(columnNames, row, explodeInnerFields, innerSeparator)).map {
+      profile =>
+        val profileID = profile.filter(_.key == "_rowId").head.value.toLong + startIDFrom
+        val attributes = profile
+        val realID = {
+          if (realIDField.isEmpty) {
+            ""
+          }
+          else {
+            attributes.filter(_.key == realIDField).map(_.value).mkString("").trim
+          }
+        }
+        Profile(profileID, attributes.filter(kv => kv.key != realIDField), realID)
+    }
+  }
+
   def loadProfilesAsDF(filePath: String, separator: String = ",", header: Boolean = true): DataFrame = {
     val sparkSession = SparkSession.builder().getOrCreate()
     val df = sparkSession.read.option("header", header).option("sep", separator).option("delimiter", "\"").option("escape", "\"").option("quote", "\"").csv(filePath)
-    df
+    dfZipWithIndex(df)
   }
 
   def loadProfiles(filePath: String, startIDFrom: Long = 0, separator: String = ",", header: Boolean = false,

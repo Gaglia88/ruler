@@ -406,7 +406,7 @@ object RulERJoin {
                     }
                   }
                   else {
-                    /** Lo mantengo, l'aggiunta a fistneighbors la fa solo il primo attributo, gli altri non ha senso che la facciano,
+                    /** Lo mantengo, l'aggiunta a firstneighbors la fa solo il primo attributo, gli altri non ha senso che la facciano,
                       * al massimo rimuovono! Quindi questi poi li verificherò alla fine che non abbiano il cbs settato a -1 */
                     if (isFirst) {
                       firstneighbors.update(firstneighborsNum, nId)

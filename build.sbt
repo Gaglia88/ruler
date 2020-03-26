@@ -23,4 +23,7 @@ libraryDependencies += "org.apache.spark" % "spark-sql_2.11" % "2.1.0"
 
 libraryDependencies += "org.apache.spark" % "spark-mllib_2.11" % "2.1.0"
 
+// https://mvnrepository.com/artifact/org.jgrapht/jgrapht-core
+libraryDependencies += "org.jgrapht" % "jgrapht-core" % "0.9.0"//% "1.0.1"
+
 mainClass in Compile := Some("Experiments.Test")

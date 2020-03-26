@@ -2,10 +2,13 @@ package RulER.SimJoins
 
 import java.util.Calendar
 
-import RulER.Commons.JS.JsFilters
-import RulER.DataStructure.MyPartitioner2
+import RulER.Commons.{CommonFunctions, DataPreparator}
+import RulER.Commons.JS.{CommonJsFunctions, JsFilters}
+import RulER.DataStructure.{MyPartitioner2, Rule}
 import org.apache.log4j.LogManager
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.DoubleAccumulator
 
 object PPJoin {
@@ -117,5 +120,14 @@ object PPJoin {
     val t2 = Calendar.getInstance().getTimeInMillis
     log.info("[GraphJoin] PPJOIN join time (s) " + (t2 - t1) / 1000.0)
     candidates
+  }
+
+  def PPJoin(df: DataFrame, r: Rule): DataFrame = {
+    val profiles = CommonFunctions.dfProfilesToRDD1(df)
+    val field = CommonFunctions.extractField(profiles, r.attribute)
+    val tokenizedDocSort = CommonJsFunctions.tokenizeAndSort(field)
+    val compNum = SparkContext.getOrCreate().doubleAccumulator
+    val sparkSession = SparkSession.builder().getOrCreate()
+    sparkSession.createDataFrame(getCandidates(tokenizedDocSort, r.threshold, compNum)).toDF("id1", "id2")
   }
 }
