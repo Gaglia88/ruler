@@ -9,6 +9,10 @@ If use this library, please cite:
 
 ---
 
+
+A brief presentation about RulER is available by clicking on the image below
+[![](http://img.youtube.com/vi/ZuIre-WO3lY/0.jpg)](http://www.youtube.com/watch?v=ZuIre-WO3lY "")
+
 ### Contacts
 For any questions about RulER write us at name.surname@unimore.it
 * Luca Gagliardelli
